@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
 
 const { modelValue } = defineProps<{
   modelValue?: { text: string }[]
@@ -11,7 +11,9 @@ const emits = defineEmits<{
 </script>
 
 <template>
-  <InputText
+  <Textarea
+    rows="1"
+    autoResize
     :value="(modelValue ?? []).map((e) => e.text).join(';')"
     @value-change="
       emits(
