@@ -44,7 +44,10 @@ const add = () => {
 
 const del = (id: string) => {
   if (id === '-1') editableAccount.value = null
-  else store.deleteAccount(id)
+  else {
+    store.deleteAccount(id)
+    store.saveToLocalStorage()
+  }
 }
 
 const validateRules = {
@@ -74,6 +77,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
 
   if (Object.values(fieldValidity).every((e) => e)) {
     store.addAccount(editableAccount.value as AccountDTO)
+    store.saveToLocalStorage()
     editableAccount.value = null
     Object.assign(fieldValidity, startFieldValidity)
   }
@@ -104,7 +108,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
       <div
         v-for="account in !editableAccount ? store.accounts : [...store.accounts, editableAccount]"
         :key="account.id"
-        class="account-row"
+        :class="account.type === 'LDAP' ? 'account-row-2' : 'account-row'"
         :style="account.id === '-1' ? 'background-color: azure;' : ''"
       >
         <div class="column">
@@ -112,6 +116,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
             v-model="account.labels"
             @blur="validateAndSave('labels')"
             :class="{ 'p-invalid': fieldValidity.labels === false && account.id === '-1' }"
+            style="width: 100%"
           />
         </div>
 
@@ -128,7 +133,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
                 if (account.type === 'LDAP') account.password = null
               }
             "
-            style="width: 140px"
+            style="width: 100%"
           />
         </div>
 
@@ -139,6 +144,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
             :maxlength="100"
             @blur="validateAndSave('login')"
             :class="{ 'p-invalid': fieldValidity.login === false && account.id === '-1' }"
+            style="width: 100%"
           />
         </div>
 
@@ -211,6 +217,14 @@ const validateAndSave = (name: keyof typeof validateRules) => {
   grid-template-columns: 2fr 1fr 1fr 1fr 50px;
   gap: 10px;
   align-items: center;
+}
+
+.account-row-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 50px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0 10px 10px;
 }
 
 .header-row {
