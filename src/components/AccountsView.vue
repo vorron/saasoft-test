@@ -16,7 +16,7 @@ const store = useAccountsStore()
 
 const editableAccount: Ref<Partial<Account> | null> = ref(null)
 
-const startFieldValidity = {
+const initialFieldValidity = {
   labels: true,
   type: undefined,
   login: undefined,
@@ -28,7 +28,7 @@ const fieldValidity = reactive<{
   type?: boolean
   login?: boolean
   password?: boolean
-}>(startFieldValidity)
+}>({ ...initialFieldValidity })
 
 const add = () => {
   if (editableAccount.value) return
@@ -52,34 +52,33 @@ const del = (id: string) => {
 
 const validateRules = {
   labels: () =>
-    (fieldValidity.labels =
-      editableAccount.value?.labels?.length === 0 ||
-      editableAccount.value?.labels?.every((e) => e.text.length < 100)),
-  type: () => (fieldValidity.type = !!editableAccount.value?.type),
+    (editableAccount.value?.labels?.length === 0 ||
+      editableAccount.value?.labels?.every((e) => e.text.length < 100)) ??
+    false,
+  type: () => !!editableAccount.value?.type,
   login: () =>
-    (fieldValidity.login =
-      !!editableAccount.value?.login &&
-      editableAccount.value?.login.length > 0 &&
-      editableAccount.value?.login.length < 100),
+    !!editableAccount.value?.login &&
+    editableAccount.value?.login.length > 0 &&
+    editableAccount.value?.login.length < 100,
   password: () =>
-    (fieldValidity.password =
-      editableAccount.value?.type === 'LDAP'
-        ? editableAccount.value?.password === null
-        : !!editableAccount.value?.password &&
-          editableAccount.value?.password.length > 0 &&
-          editableAccount.value?.password.length < 100),
+    editableAccount.value?.type === 'LDAP'
+      ? editableAccount.value?.password === null
+      : !!editableAccount.value?.password &&
+        editableAccount.value?.password.length > 0 &&
+        editableAccount.value?.password.length < 100,
 }
 
 const validateAndSave = (name: keyof typeof validateRules) => {
   if (!editableAccount.value) return
 
-  validateRules[name]()
+  fieldValidity[name] = validateRules[name]()
 
-  if (Object.values(fieldValidity).every((e) => e)) {
+  if (Object.values(validateRules).every((e) => e())) {
     store.addAccount(editableAccount.value as AccountDTO)
     store.saveToLocalStorage()
     editableAccount.value = null
-    Object.assign(fieldValidity, startFieldValidity)
+
+    Object.assign(fieldValidity, initialFieldValidity)
   }
 }
 </script>
