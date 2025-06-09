@@ -3,9 +3,9 @@ import { useAccountsStore, type Account, type AccountDTO } from '@/stores/accoun
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
-import AutoComplete from 'primevue/autocomplete'
 import Select from 'primevue/select'
 import { reactive, ref, type Ref } from 'vue'
+import ChipsView from './ChipsView.vue'
 
 const accountTypes = [
   { label: 'Локальная', value: 'Локальная' },
@@ -89,7 +89,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
 
     <div class="hint">
       <i class="pi pi-question-circle" />
-      Для указания нескольких меток для одной пары логин/пароль используйте Enter;
+      Для указания нескольких меток для одной пары логин/пароль используйте ;
     </div>
 
     <div class="accounts-list">
@@ -108,12 +108,8 @@ const validateAndSave = (name: keyof typeof validateRules) => {
         :style="account.id === '-1' ? 'background-color: azure;' : ''"
       >
         <div class="column">
-          <AutoComplete
+          <ChipsView
             v-model="account.labels"
-            multiple
-            fluid
-            @complete="() => {}"
-            :typeahead="false"
             @blur="validateAndSave('labels')"
             :class="{ 'p-invalid': fieldValidity.labels === false && account.id === '-1' }"
           />
@@ -132,6 +128,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
                 if (account.type === 'LDAP') account.password = null
               }
             "
+            style="width: 140px"
           />
         </div>
 
@@ -146,9 +143,11 @@ const validateAndSave = (name: keyof typeof validateRules) => {
         </div>
 
         <div
-          class="column"
           v-if="account.type !== 'LDAP'"
-          :class="{ 'p-invalid': fieldValidity.password === false && account.id === '-1' }"
+          :class="[
+            'column',
+            { 'p-invalid': fieldValidity.password === false && account.id === '-1' },
+          ]"
         >
           <Password
             v-model="account.password"
