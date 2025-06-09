@@ -9,7 +9,9 @@ export interface Account {
   password: string | null
 }
 
-export const useAccountsStore = defineStore('account', () => {
+export type AccountDTO = Omit<Account, 'id'>
+
+export const useAccountsStore = defineStore('accounts', () => {
   const accounts = ref<Account[]>([])
 
   function addAccount() {
@@ -18,11 +20,11 @@ export const useAccountsStore = defineStore('account', () => {
       labels: [],
       type: 'Локальная',
       login: '',
-      password: null,
+      password: '',
     })
   }
 
-  function updateAccount(id: string, updatedAccount: Omit<Account, 'id'>) {
+  function updateAccount(id: string, updatedAccount: AccountDTO) {
     const index = accounts.value.findIndex((acc) => acc.id === id)
     if (index !== -1) {
       accounts.value[index] = { ...updatedAccount, id }
