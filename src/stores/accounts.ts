@@ -14,14 +14,8 @@ export type AccountDTO = Omit<Account, 'id'>
 export const useAccountsStore = defineStore('accounts', () => {
   const accounts = ref<Account[]>([])
 
-  function addAccount() {
-    accounts.value.push({
-      id: Date.now().toString(),
-      labels: [],
-      type: 'Локальная',
-      login: '',
-      password: '',
-    })
+  function addAccount(accountDTO: AccountDTO) {
+    accounts.value.push({ ...accountDTO, id: Date.now().toString() })
   }
 
   function updateAccount(id: string, updatedAccount: AccountDTO) {

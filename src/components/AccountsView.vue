@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { useAccountsStore } from '@/stores/accounts'
+import { useAccountsStore, type Account, type AccountDTO } from '@/stores/accounts'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import AutoComplete from 'primevue/autocomplete'
 import Select from 'primevue/select'
+import { reactive, ref, type Ref } from 'vue'
 
 const accountTypes = [
   { label: 'Локальная', value: 'Локальная' },
@@ -12,13 +13,78 @@ const accountTypes = [
 ]
 
 const store = useAccountsStore()
+
+const editableAccount: Ref<Partial<Account> | null> = ref(null)
+
+const startFieldValidity = {
+  labels: true,
+  type: undefined,
+  login: undefined,
+  password: undefined,
+}
+
+const fieldValidity = reactive<{
+  labels?: boolean
+  type?: boolean
+  login?: boolean
+  password?: boolean
+}>(startFieldValidity)
+
+const add = () => {
+  if (editableAccount.value) return
+
+  editableAccount.value = {
+    id: '-1',
+    labels: [],
+    type: undefined,
+    login: undefined,
+    password: undefined,
+  }
+}
+
+const del = (id: string) => {
+  if (id === '-1') editableAccount.value = null
+  else store.deleteAccount(id)
+}
+
+const validateRules = {
+  labels: () =>
+    (fieldValidity.labels =
+      editableAccount.value?.labels?.length === 0 ||
+      editableAccount.value?.labels?.every((e) => e.text.length < 100)),
+  type: () => (fieldValidity.type = !!editableAccount.value?.type),
+  login: () =>
+    (fieldValidity.login =
+      !!editableAccount.value?.login &&
+      editableAccount.value?.login.length > 0 &&
+      editableAccount.value?.login.length < 100),
+  password: () =>
+    (fieldValidity.password =
+      editableAccount.value?.type === 'LDAP'
+        ? editableAccount.value?.password === null
+        : !!editableAccount.value?.password &&
+          editableAccount.value?.password.length > 0 &&
+          editableAccount.value?.password.length < 100),
+}
+
+const validateAndSave = (name: keyof typeof validateRules) => {
+  if (!editableAccount.value) return
+
+  validateRules[name]()
+
+  if (Object.values(fieldValidity).every((e) => e)) {
+    store.addAccount(editableAccount.value as AccountDTO)
+    editableAccount.value = null
+    Object.assign(fieldValidity, startFieldValidity)
+  }
+}
 </script>
 
 <template>
   <div class="accounts-form">
     <div class="header">
       <h2>Учетные записи</h2>
-      <Button icon="pi pi-plus" @click="store.addAccount" variant="outlined" />
+      <Button icon="pi pi-plus" @click="add" variant="outlined" />
     </div>
 
     <div class="hint">
@@ -35,7 +101,12 @@ const store = useAccountsStore()
         <div class="column actions"></div>
       </div>
 
-      <div v-for="account in store.accounts" :key="account.id" class="account-row">
+      <div
+        v-for="account in !editableAccount ? store.accounts : [...store.accounts, editableAccount]"
+        :key="account.id"
+        class="account-row"
+        :style="account.id === '-1' ? 'background-color: azure;' : ''"
+      >
         <div class="column">
           <AutoComplete
             v-model="account.labels"
@@ -43,6 +114,8 @@ const store = useAccountsStore()
             fluid
             @complete="() => {}"
             :typeahead="false"
+            @blur="validateAndSave('labels')"
+            :class="{ 'p-invalid': fieldValidity.labels === false && account.id === '-1' }"
           />
         </div>
 
@@ -52,27 +125,46 @@ const store = useAccountsStore()
             :options="accountTypes"
             optionLabel="label"
             optionValue="value"
+            @blur="validateAndSave('type')"
+            :class="{ 'p-invalid': fieldValidity.type === false && account.id === '-1' }"
+            @change="
+              () => {
+                if (account.type === 'LDAP') account.password = null
+              }
+            "
           />
         </div>
 
         <div class="column">
-          <InputText v-model="account.login" placeholder="Логин" :maxlength="100" />
+          <InputText
+            v-model="account.login"
+            placeholder="Логин"
+            :maxlength="100"
+            @blur="validateAndSave('login')"
+            :class="{ 'p-invalid': fieldValidity.login === false && account.id === '-1' }"
+          />
         </div>
 
-        <div class="column" v-if="account.type === 'Локальная'">
+        <div
+          class="column"
+          v-if="account.type !== 'LDAP'"
+          :class="{ 'p-invalid': fieldValidity.password === false && account.id === '-1' }"
+        >
           <Password
             v-model="account.password"
             placeholder="Пароль"
             :maxlength="100"
             :feedback="false"
             toggleMask
+            @blur="validateAndSave('password')"
+            :class="{ 'p-invalid': fieldValidity.password === false && account.id === '-1' }"
           />
         </div>
 
         <div class="column actions">
           <Button
             icon="pi pi-trash"
-            @click="store.deleteAccount(account.id)"
+            @click="del(account.id ?? '-1')"
             text
             rounded
             severity="danger"
@@ -129,7 +221,8 @@ const store = useAccountsStore()
 }
 
 .account-row {
-  padding: 10px 0;
+  padding: 10px 0 10px 10px;
+  border-radius: 10px;
 }
 
 .column {
@@ -143,5 +236,8 @@ const store = useAccountsStore()
 
 .p-invalid {
   border-color: #f44336 !important;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 10px;
 }
 </style>
