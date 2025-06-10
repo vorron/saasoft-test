@@ -14,6 +14,7 @@ const emits = defineEmits<{
   <Textarea
     rows="1"
     autoResize
+    @keydown.enter.prevent
     :value="(modelValue ?? []).map((e) => e.text).join(';')"
     @value-change="
       emits(

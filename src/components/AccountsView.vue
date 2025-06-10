@@ -107,7 +107,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
       <div
         v-for="account in !editableAccount ? store.accounts : [...store.accounts, editableAccount]"
         :key="account.id"
-        :class="account.type === 'LDAP' ? 'account-row-2' : 'account-row'"
+        class="account-row-2"
         :style="account.id === '-1' ? 'background-color: azure;' : ''"
       >
         <div class="column">
@@ -116,11 +116,13 @@ const validateAndSave = (name: keyof typeof validateRules) => {
             @blur="validateAndSave('labels')"
             :class="{ 'p-invalid': fieldValidity.labels === false && account.id === '-1' }"
             style="width: 100%"
+            :readonly="account.id !== '-1'"
           />
         </div>
 
         <div class="column">
           <Select
+            v-if="account.id === '-1'"
             v-model="account.type"
             :options="accountTypes"
             optionLabel="label"
@@ -134,35 +136,56 @@ const validateAndSave = (name: keyof typeof validateRules) => {
             "
             style="width: 100%"
           />
-        </div>
-
-        <div class="column">
           <InputText
-            v-model="account.login"
+            v-else
+            v-model="account.type"
             placeholder="Логин"
-            :maxlength="100"
-            @blur="validateAndSave('login')"
-            :class="{ 'p-invalid': fieldValidity.login === false && account.id === '-1' }"
             style="width: 100%"
+            readonly
           />
         </div>
 
         <div
-          v-if="account.type !== 'LDAP'"
-          :class="[
-            'column',
-            { 'p-invalid': fieldValidity.password === false && account.id === '-1' },
-          ]"
+          :style="account.type === 'LDAP' ? '' : 'display: flex; justify-content: space-between'"
         >
-          <Password
-            v-model="account.password"
-            placeholder="Пароль"
-            :maxlength="100"
-            :feedback="false"
-            toggleMask
-            @blur="validateAndSave('password')"
-            :class="{ 'p-invalid': fieldValidity.password === false && account.id === '-1' }"
-          />
+          <div class="column">
+            <InputText
+              v-model="account.login"
+              placeholder="Логин"
+              :maxlength="100"
+              @blur="validateAndSave('login')"
+              :class="{ 'p-invalid': fieldValidity.login === false && account.id === '-1' }"
+              style="width: 100%"
+              :readonly="account.id !== '-1'"
+            />
+          </div>
+
+          <div
+            v-if="account.type !== 'LDAP'"
+            style="margin-left: 10px"
+            :class="[
+              'column',
+              { 'p-invalid': fieldValidity.password === false && account.id === '-1' },
+            ]"
+          >
+            <Password
+              v-if="account.id === '-1'"
+              v-model="account.password"
+              placeholder="Пароль"
+              :maxlength="100"
+              :feedback="false"
+              toggleMask
+              @blur="validateAndSave('password')"
+              :class="{ 'p-invalid': fieldValidity.password === false && account.id === '-1' }"
+            />
+            <Password
+              v-else
+              :model-value="account.password"
+              @keydown.prevent
+              :feedback="false"
+              toggleMask
+            />
+          </div>
         </div>
 
         <div class="column actions">
@@ -211,13 +234,6 @@ const validateAndSave = (name: keyof typeof validateRules) => {
 }
 
 .header-row,
-.account-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 50px;
-  gap: 10px;
-  align-items: center;
-}
-
 .account-row-2 {
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 50px;
