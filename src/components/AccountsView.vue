@@ -53,7 +53,7 @@ const del = (id: string) => {
 const validateRules = {
   labels: () =>
     (editableAccount.value?.labels?.length === 0 ||
-      editableAccount.value?.labels?.every((e) => e.text.length < 100)) ??
+      editableAccount.value?.labels?.every((e) => e.text.length < 50)) ??
     false,
   type: () => !!editableAccount.value?.type,
   login: () =>
@@ -107,7 +107,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
       <div
         v-for="account in !editableAccount ? store.accounts : [...store.accounts, editableAccount]"
         :key="account.id"
-        class="account-row-2"
+        class="account-row"
         :style="account.id === '-1' ? 'background-color: azure;' : ''"
       >
         <div class="column">
@@ -182,6 +182,7 @@ const validateAndSave = (name: keyof typeof validateRules) => {
               v-else
               :model-value="account.password"
               @keydown.prevent
+              readonly
               :feedback="false"
               toggleMask
             />
@@ -233,8 +234,15 @@ const validateAndSave = (name: keyof typeof validateRules) => {
   gap: 10px;
 }
 
-.header-row,
-.account-row-2 {
+.header-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 50px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0 10px 10px;
+}
+
+.account-row {
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 50px;
   gap: 10px;
